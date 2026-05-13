@@ -215,6 +215,46 @@
     display: flex; justify-content: flex-end; align-items: center;
     gap: 10px; margin-bottom: 12px; flex-wrap: wrap; min-height: 34px;
   }
+
+  /* Sub-tabs */
+  .subtab-nav {
+    display: flex; gap: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px; padding: 3px; margin-bottom: 16px;
+  }
+  .subtab-btn {
+    flex: 1; background: transparent; color: rgba(255,255,255,0.8);
+    border: none; padding: 8px 14px; border-radius: 7px;
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: all 0.2s; box-shadow: none;
+  }
+  .subtab-btn:hover { background: rgba(255,255,255,0.15); color: white; box-shadow: none; }
+  .subtab-btn.active { background: white; color: #667eea; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+  .subtab-content { display: none; }
+  .subtab-content.active { display: block; }
+
+  /* Mobile responsive */
+  @media (max-width: 640px) {
+    body { padding: 10px; }
+    header h1 { font-size: 22px; }
+    header p { font-size: 13px; }
+    .toolbar { padding: 10px 12px; flex-direction: column; align-items: flex-start; gap: 8px; }
+    .toolbar-right { width: 100%; flex-wrap: nowrap; gap: 6px; }
+    .toolbar-right button { flex: 1; padding: 8px 6px; font-size: 12px; }
+    .form-row.three { grid-template-columns: 1fr 1fr; }
+    .form-row.four { grid-template-columns: 1fr 1fr; }
+    .stat-card { padding: 12px 6px; }
+    .stat-card .value { font-size: 17px; }
+    .stat-card .label { font-size: 10px; }
+    .ai-input-row { flex-direction: column; }
+    .preview-item { grid-template-columns: 1fr 48px 48px 40px 40px 40px 24px; gap: 3px; font-size: 11px; }
+    .preview-header { grid-template-columns: 1fr 48px 48px 40px 40px 40px 24px; gap: 3px; }
+    .card { padding: 16px 14px; }
+  }
+  @media (max-width: 400px) {
+    .form-row.three { grid-template-columns: 1fr; }
+    .summary-cards { grid-template-columns: repeat(2, 1fr); }
+  }
 </style>
 </head>
 <body>
@@ -247,28 +287,6 @@
       </div>
     </div>
 
-    <div class="ai-panel">
-      <h3>🤖 AI 智能录入（支持复合食物）</h3>
-      <div class="ai-input-row">
-        <input type="text" id="aiInput" placeholder="例如：1个牛肉汉堡 + 中份薯条，或 一碗番茄牛腩面">
-        <button class="ai" id="aiParseBtn">解析并预览</button>
-      </div>
-      <div class="ai-hint">💡 适合复合食物 / 餐厅菜 / 多个食物混合描述。常见单一食物建议直接用下方搜索更快更准。</div>
-      <div style="border-top:1px solid rgba(90,70,49,0.2);margin-top:10px;padding-top:10px;">
-        <div style="font-size:13px;font-weight:600;color:#5a4631;margin-bottom:7px;">📷 营养成分表拍照识别</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <label for="photoInput" class="btn-photo" id="photoLabel">📷 选择 / 拍摄图片</label>
-          <input type="file" id="photoInput" accept="image/*" style="display:none;">
-          <span id="photoStatus" style="font-size:12px;color:#5a4631;"></span>
-        </div>
-        <div id="photoPreview" style="display:none;margin-top:10px;gap:12px;align-items:flex-start;flex-wrap:wrap;">
-          <img id="photoImg" style="max-height:110px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);flex-shrink:0;">
-          <div id="photoResult" style="font-size:12px;color:#5a4631;line-height:1.8;"></div>
-        </div>
-        <div class="ai-hint" style="margin-top:6px;">💡 使用 GLM-4V-Flash 视觉模型，自动换算每 100g 数值并填入下方表单，支持中英文标签。</div>
-      </div>
-    </div>
-
     <div class="summary-cards">
       <div class="stat-card">
         <div class="label">基础代谢</div>
@@ -292,156 +310,189 @@
       </div>
     </div>
 
-    <div class="grid">
-      <!-- Profile -->
-      <div class="card">
-        <h2>👤 个人信息</h2>
+    <div class="subtab-nav">
+      <button class="subtab-btn active" data-subtab="food">🍱 饮食</button>
+      <button class="subtab-btn" data-subtab="exercise">💪 运动</button>
+    </div>
 
-        <div class="profile-section static-info">
-          <div class="section-label">📌 基本信息（首次设置后长期保存）</div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>姓名</label>
-              <input type="text" id="profileName" placeholder="请输入姓名">
-            </div>
-            <div class="form-group">
-              <label>性别</label>
-              <select id="gender">
-                <option value="male">男</option>
-                <option value="female">女</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row three">
-            <div class="form-group">
-              <label>出生日期</label>
-              <input type="date" id="birthDate">
-            </div>
-            <div class="form-group">
-              <label>身高 (cm)</label>
-              <input type="number" id="height" placeholder="170">
-            </div>
-            <div class="form-group">
-              <label>目标体重 (kg)</label>
-              <input type="number" id="targetWeight" placeholder="60" step="0.1">
-            </div>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>饮食目标</label>
-              <select id="goal">
-                <option value="cut">减脂 (-500 kcal)</option>
-                <option value="maintain" selected>维持体重</option>
-                <option value="bulk">增肌 (+300 kcal)</option>
-              </select>
-            </div>
-            <div class="form-group" style="justify-content:flex-end;">
-              <button id="saveStaticProfile">保存基本信息</button>
-            </div>
-          </div>
+    <!-- ===== 饮食子页 ===== -->
+    <div class="subtab-content active" id="subtab-food">
+      <div class="ai-panel">
+        <h3>🤖 AI 智能录入（支持复合食物）</h3>
+        <div class="ai-input-row">
+          <input type="text" id="aiInput" placeholder="例如：1个牛肉汉堡 + 中份薯条，或 一碗番茄牛腩面">
+          <button class="ai" id="aiParseBtn">解析并预览</button>
         </div>
-
-        <div class="profile-section dynamic-info">
-          <div class="section-label">⚡ 今日状态（随时更新，自动记录体重历史）</div>
-          <div class="form-row">
-            <div class="form-group">
-              <label>当前体重 (kg)</label>
-              <input type="number" id="weight" placeholder="65" step="0.1">
-              <div class="weight-history-hint" id="weightHint"></div>
-            </div>
-            <div class="form-group">
-              <label>活动水平</label>
-              <select id="activity">
-                <option value="1.2">久坐（无运动）</option>
-                <option value="1.375" selected>轻度（每周1-3次）</option>
-                <option value="1.55">中度（每周3-5次）</option>
-                <option value="1.725">高强度（每周6-7次）</option>
-                <option value="1.9">极高强度（体力工作）</option>
-              </select>
-            </div>
+        <div class="ai-hint">💡 适合复合食物 / 餐厅菜 / 多个食物混合描述。常见单一食物建议直接用下方搜索更快更准。</div>
+        <div style="border-top:1px solid rgba(90,70,49,0.2);margin-top:10px;padding-top:10px;">
+          <div style="font-size:13px;font-weight:600;color:#5a4631;margin-bottom:7px;">📷 营养成分表拍照识别</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <label for="photoInput" class="btn-photo" id="photoLabel">📷 选择 / 拍摄图片</label>
+            <input type="file" id="photoInput" accept="image/*" style="display:none;">
+            <span id="photoStatus" style="font-size:12px;color:#5a4631;"></span>
           </div>
-          <div style="display:flex;justify-content:flex-end;">
-            <button id="saveDynProfile">更新并计算 TDEE</button>
+          <div id="photoPreview" style="display:none;margin-top:10px;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+            <img id="photoImg" style="max-height:110px;border-radius:8px;border:1px solid rgba(0,0,0,0.1);flex-shrink:0;">
+            <div id="photoResult" style="font-size:12px;color:#5a4631;line-height:1.8;"></div>
           </div>
-        </div>
-
-        <div class="assess-box" id="profileResult" style="display:none;">
-          <div><b>年龄：</b><span id="ageVal">--</span> 岁 &nbsp;·&nbsp; <b>BMR：</b><span id="bmrVal">--</span> kcal/天</div>
-          <div><b>TDEE：</b><span id="tdeeVal">--</span> kcal/天 &nbsp;·&nbsp; <b>每日目标：</b><span id="goalKcal">--</span> kcal</div>
-          <div><b>蛋白质：</b><span id="goalP">--</span>g &nbsp;<b>碳水：</b><span id="goalC">--</span>g &nbsp;<b>脂肪：</b><span id="goalF">--</span>g</div>
+          <div class="ai-hint" style="margin-top:6px;">💡 使用 GLM-4V-Flash 视觉模型，自动换算每 100g 数值并填入下方表单，支持中英文标签。</div>
         </div>
       </div>
 
-      <!-- Progress -->
-      <div class="card">
-        <h2>📊 今日进度与评估</h2>
-        <div style="display:flex;justify-content:space-between;align-items:center;background:#f7fafc;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
-          <span style="font-size:13px;font-weight:600;color:#4a5568;">热量缺口</span>
-          <span id="deficitView" style="font-size:20px;font-weight:700;color:#a0aec0;">--</span>
-        </div>
-        <div class="progress-row">
-          <div class="progress-header">
-            <span class="name">热量</span>
-            <span class="nums"><span id="intakeCalView2">0</span> / <span id="targetCalView2">--</span> kcal</span>
-          </div>
-          <div class="progress-bar"><div class="progress-fill calorie" id="barCal" style="width:0%"></div></div>
-        </div>
-        <div class="progress-row">
-          <div class="progress-header">
-            <span class="name">蛋白质</span>
-            <span class="nums"><span id="pVal">0</span> / <span id="pGoal">--</span> g</span>
-          </div>
-          <div class="progress-bar"><div class="progress-fill protein" id="barP" style="width:0%"></div></div>
-        </div>
-        <div class="progress-row">
-          <div class="progress-header">
-            <span class="name">碳水化合物</span>
-            <span class="nums"><span id="cVal">0</span> / <span id="cGoal">--</span> g</span>
-          </div>
-          <div class="progress-bar"><div class="progress-fill carbs" id="barC" style="width:0%"></div></div>
-        </div>
-        <div class="progress-row">
-          <div class="progress-header">
-            <span class="name">脂肪</span>
-            <span class="nums"><span id="fVal">0</span> / <span id="fGoal">--</span> g</span>
-          </div>
-          <div class="progress-bar"><div class="progress-fill fat" id="barF" style="width:0%"></div></div>
-        </div>
-        <div class="assess-box" id="assessment">
-          <div class="empty">填写个人信息后将显示评估结果</div>
-        </div>
-      </div>
+      <div class="grid">
+        <!-- Profile -->
+        <div class="card">
+          <h2>👤 个人信息</h2>
 
-      <!-- Food -->
-      <div class="card">
-        <h2>🍱 饮食记录</h2>
-        <div class="add-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label>🔍 搜索食物（已收录 <span id="dbCount">0</span> 种）</label>
-              <input type="text" id="foodName" placeholder="输入名称，如：鸡胸、米饭、苹果..." autocomplete="off">
-              <div class="suggest-box" id="suggestBox"></div>
+          <div class="profile-section static-info">
+            <div class="section-label">📌 基本信息（首次设置后长期保存）</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>姓名</label>
+                <input type="text" id="profileName" placeholder="请输入姓名">
+              </div>
+              <div class="form-group">
+                <label>性别</label>
+                <select id="gender">
+                  <option value="male">男</option>
+                  <option value="female">女</option>
+                </select>
+              </div>
             </div>
-            <div class="form-group">
-              <label>分量 (g)</label>
-              <input type="number" id="foodAmount" placeholder="100">
+            <div class="form-row three">
+              <div class="form-group">
+                <label>出生日期</label>
+                <input type="date" id="birthDate">
+              </div>
+              <div class="form-group">
+                <label>身高 (cm)</label>
+                <input type="number" id="height" placeholder="170">
+              </div>
+              <div class="form-group">
+                <label>目标体重 (kg)</label>
+                <input type="number" id="targetWeight" placeholder="60" step="0.1">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>饮食目标</label>
+                <select id="goal">
+                  <option value="cut">减脂 (-500 kcal)</option>
+                  <option value="maintain" selected>维持体重</option>
+                  <option value="bulk">增肌 (+300 kcal)</option>
+                </select>
+              </div>
+              <div class="form-group" style="justify-content:flex-end;">
+                <button id="saveStaticProfile">保存基本信息</button>
+              </div>
             </div>
           </div>
-          <div class="form-row four">
-            <div class="form-group"><label>热量/100g</label><input type="number" id="foodKcal" placeholder="kcal"></div>
-            <div class="form-group"><label>蛋白质/100g</label><input type="number" id="foodP" placeholder="g"></div>
-            <div class="form-group"><label>碳水/100g</label><input type="number" id="foodC" placeholder="g"></div>
-            <div class="form-group"><label>脂肪/100g</label><input type="number" id="foodF" placeholder="g"></div>
+
+          <div class="profile-section dynamic-info">
+            <div class="section-label">⚡ 今日状态（随时更新，自动记录体重历史）</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>当前体重 (kg)</label>
+                <input type="number" id="weight" placeholder="65" step="0.1">
+                <div class="weight-history-hint" id="weightHint"></div>
+              </div>
+              <div class="form-group">
+                <label>活动水平</label>
+                <select id="activity">
+                  <option value="1.2">久坐（无运动）</option>
+                  <option value="1.375" selected>轻度（每周1-3次）</option>
+                  <option value="1.55">中度（每周3-5次）</option>
+                  <option value="1.725">高强度（每周6-7次）</option>
+                  <option value="1.9">极高强度（体力工作）</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;">
+              <button id="saveDynProfile">更新并计算 TDEE</button>
+            </div>
           </div>
-          <div style="display:flex;justify-content:flex-end;">
-            <button id="addFood">+ 添加食物</button>
+
+          <div class="assess-box" id="profileResult" style="display:none;">
+            <div><b>年龄：</b><span id="ageVal">--</span> 岁 &nbsp;·&nbsp; <b>BMR：</b><span id="bmrVal">--</span> kcal/天</div>
+            <div><b>TDEE：</b><span id="tdeeVal">--</span> kcal/天 &nbsp;·&nbsp; <b>每日目标：</b><span id="goalKcal">--</span> kcal</div>
+            <div><b>蛋白质：</b><span id="goalP">--</span>g &nbsp;<b>碳水：</b><span id="goalC">--</span>g &nbsp;<b>脂肪：</b><span id="goalF">--</span>g</div>
           </div>
         </div>
-        <div class="item-list" id="foodList"></div>
-      </div>
 
+        <!-- Progress -->
+        <div class="card">
+          <h2>📊 今日进度与评估</h2>
+          <div style="display:flex;justify-content:space-between;align-items:center;background:#f7fafc;border-radius:8px;padding:10px 14px;margin-bottom:14px;">
+            <span style="font-size:13px;font-weight:600;color:#4a5568;">热量缺口</span>
+            <span id="deficitView" style="font-size:20px;font-weight:700;color:#a0aec0;">--</span>
+          </div>
+          <div class="progress-row">
+            <div class="progress-header">
+              <span class="name">热量</span>
+              <span class="nums"><span id="intakeCalView2">0</span> / <span id="targetCalView2">--</span> kcal</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill calorie" id="barCal" style="width:0%"></div></div>
+          </div>
+          <div class="progress-row">
+            <div class="progress-header">
+              <span class="name">蛋白质</span>
+              <span class="nums"><span id="pVal">0</span> / <span id="pGoal">--</span> g</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill protein" id="barP" style="width:0%"></div></div>
+          </div>
+          <div class="progress-row">
+            <div class="progress-header">
+              <span class="name">碳水化合物</span>
+              <span class="nums"><span id="cVal">0</span> / <span id="cGoal">--</span> g</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill carbs" id="barC" style="width:0%"></div></div>
+          </div>
+          <div class="progress-row">
+            <div class="progress-header">
+              <span class="name">脂肪</span>
+              <span class="nums"><span id="fVal">0</span> / <span id="fGoal">--</span> g</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill fat" id="barF" style="width:0%"></div></div>
+          </div>
+          <div class="assess-box" id="assessment">
+            <div class="empty">填写个人信息后将显示评估结果</div>
+          </div>
+        </div>
+
+        <!-- Food (full width) -->
+        <div class="card" style="grid-column:1/-1;">
+          <h2>🍱 饮食记录</h2>
+          <div class="add-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>🔍 搜索食物（已收录 <span id="dbCount">0</span> 种）</label>
+                <input type="text" id="foodName" placeholder="输入名称，如：鸡胸、米饭、苹果..." autocomplete="off">
+                <div class="suggest-box" id="suggestBox"></div>
+              </div>
+              <div class="form-group">
+                <label>分量 (g)</label>
+                <input type="number" id="foodAmount" placeholder="100">
+              </div>
+            </div>
+            <div class="form-row four">
+              <div class="form-group"><label>热量/100g</label><input type="number" id="foodKcal" placeholder="kcal"></div>
+              <div class="form-group"><label>蛋白质/100g</label><input type="number" id="foodP" placeholder="g"></div>
+              <div class="form-group"><label>碳水/100g</label><input type="number" id="foodC" placeholder="g"></div>
+              <div class="form-group"><label>脂肪/100g</label><input type="number" id="foodF" placeholder="g"></div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;">
+              <button id="addFood">+ 添加食物</button>
+            </div>
+          </div>
+          <div class="item-list" id="foodList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 运动子页 ===== -->
+    <div class="subtab-content" id="subtab-exercise">
       <!-- Exercise -->
-      <div class="card">
+      <div class="card" style="margin-bottom:20px;">
         <h2>🏃 运动记录</h2>
         <div class="preset-tabs" id="exercisePresets"></div>
         <div class="add-form">
@@ -469,8 +520,8 @@
         </details>
       </div>
 
-      <!-- Strength Training - full width -->
-      <div class="card" style="grid-column:1/-1;">
+      <!-- Strength Training -->
+      <div class="card">
         <h2>💪 力量训练</h2>
         <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;" id="strengthCatTabs">
           <button class="scat-btn active" data-cat="胸">胸 · Chest</button>
@@ -1573,6 +1624,16 @@ $("photoInput").addEventListener("change", async (e) => {
     }
   };
   reader.readAsDataURL(file);
+});
+
+// 子标签切换（饮食 / 运动）
+document.querySelectorAll(".subtab-btn").forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll(".subtab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".subtab-content").forEach(c => c.classList.remove("active"));
+    btn.classList.add("active");
+    $("subtab-" + btn.dataset.subtab).classList.add("active");
+  };
 });
 
 // 标签切换
