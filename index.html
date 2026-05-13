@@ -992,25 +992,28 @@ function renderSummary() {
 
   const t = calcTargets(store.profile);
   if (!t) return;
+  const effectiveTarget = t.target + totals.burn;
+  const adjustedCarbs = Math.max(0, Math.round((effectiveTarget - t.protein * 4 - t.fat * 9) / 4));
+
   $("bmrCardView").innerHTML = `${t.bmr}<span class="unit"> kcal</span>`;
   $("actualMetView").innerHTML = `${t.tdee + totals.burn}<span class="unit"> kcal</span>`;
-  $("targetCalView").innerHTML = `${t.target}<span class="unit"> kcal</span>`;
-  $("targetCalView2").textContent = t.target;
-  const remain = t.target - totals.intake;
+  $("targetCalView").innerHTML = `${effectiveTarget}<span class="unit"> kcal</span>`;
+  $("targetCalView2").textContent = effectiveTarget;
+  const remain = effectiveTarget - totals.intake;
   $("remainCalView").innerHTML = `${Math.max(0, remain)}<span class="unit"> kcal</span>`;
   $("remainCard").className = "stat-card" + (remain >= 0 ? " remain-ok" : " remain-over");
-  $("pGoal").textContent = t.protein; $("cGoal").textContent = t.carbs; $("fGoal").textContent = t.fat;
+  $("pGoal").textContent = t.protein; $("cGoal").textContent = adjustedCarbs; $("fGoal").textContent = t.fat;
 
   const deficit = t.tdee + totals.burn - totals.intake;
-  const goalGap = t.target - (totals.intake - totals.burn);
+  const goalGap = effectiveTarget - totals.intake;
   const deficitEl = $("deficitView");
   deficitEl.textContent = `${deficit >= 0 ? "+" : ""}${deficit} kcal`;
   deficitEl.style.color = deficit >= 0 ? "#48bb78" : "#ed8936";
-  setBar("barCal", totals.intake, t.target);
+  setBar("barCal", totals.intake, effectiveTarget);
   setBar("barP", totals.p, t.protein);
-  setBar("barC", totals.c, t.carbs);
+  setBar("barC", totals.c, adjustedCarbs);
   setBar("barF", totals.f, t.fat);
-  renderAssessment(totals, t, goalGap);
+  renderAssessment(totals, { ...t, carbs: adjustedCarbs }, goalGap);
 }
 
 function setBar(id, val, goal) {
