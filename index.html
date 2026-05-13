@@ -48,7 +48,7 @@
   .toolbar-right { display: flex; gap: 8px; flex-wrap: wrap; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
-  .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+  .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); min-width: 0; }
   .card h2 {
     font-size: 18px; margin-bottom: 14px; color: #2d3748;
     display: flex; align-items: center; gap: 8px;
@@ -241,8 +241,11 @@
     .toolbar { padding: 10px 12px; flex-direction: column; align-items: flex-start; gap: 8px; }
     .toolbar-right { width: 100%; flex-wrap: nowrap; gap: 6px; }
     .toolbar-right button { flex: 1; padding: 8px 6px; font-size: 12px; }
+    .form-row { grid-template-columns: 1fr; }
     .form-row.three { grid-template-columns: 1fr 1fr; }
     .form-row.four { grid-template-columns: 1fr 1fr; }
+    .add-form button { width: 100%; }
+    #saveStaticProfile, #saveDynProfile { width: 100%; }
     .stat-card { padding: 12px 6px; }
     .stat-card .value { font-size: 17px; }
     .stat-card .label { font-size: 10px; }
