@@ -73,7 +73,7 @@
   .form-group { display: flex; flex-direction: column; position: relative; }
   .form-group label { font-size: 12px; color: #4a5568; margin-bottom: 4px; font-weight: 500; }
   .form-group input, .form-group select, .form-group textarea {
-    padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 8px;
+    width: 100%; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 8px;
     font-size: 14px; transition: border-color 0.2s; font-family: inherit;
   }
   .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
@@ -95,9 +95,11 @@
   button.ai { background: linear-gradient(135deg, #f093fb, #f5576c); }
   button.sm { padding: 6px 14px; font-size: 13px; }
 
-  .summary-cards { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; margin-bottom: 20px; }
+  .summary-cards { display: grid; grid-template-columns: repeat(6,1fr); gap: 12px; margin-bottom: 20px; }
   @media (max-width: 900px) { .summary-cards { grid-template-columns: repeat(3,1fr); } }
   @media (max-width: 500px) { .summary-cards { grid-template-columns: repeat(2,1fr); } }
+  .stat-card.remain-ok .value { color: #48bb78; }
+  .stat-card.remain-over .value { color: #f56565; }
   .stat-card { background: white; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
   .stat-card .label { font-size: 12px; color: #718096; margin-bottom: 4px; }
   .stat-card .value { font-size: 22px; font-weight: 700; color: #2d3748; }
@@ -320,6 +322,10 @@
       <div class="stat-card">
         <div class="label">摄入热量</div>
         <div class="value" id="intakeCalView">0<span class="unit"> kcal</span></div>
+      </div>
+      <div class="stat-card" id="remainCard">
+        <div class="label">还可以吃</div>
+        <div class="value" id="remainCalView">--<span class="unit"> kcal</span></div>
       </div>
     </div>
 
@@ -975,6 +981,8 @@ function renderSummary() {
     $("bmrCardView").innerHTML = `--<span class="unit"> kcal</span>`;
     $("actualMetView").innerHTML = `--<span class="unit"> kcal</span>`;
     $("targetCalView").innerHTML = `--<span class="unit"> kcal</span>`;
+    $("remainCalView").innerHTML = `--<span class="unit"> kcal</span>`;
+    $("remainCard").className = "stat-card";
     $("targetCalView2").textContent = "--";
     $("pGoal").textContent = "--"; $("cGoal").textContent = "--"; $("fGoal").textContent = "--";
     $("deficitView").textContent = "--"; $("deficitView").style.color = "#a0aec0";
@@ -988,6 +996,9 @@ function renderSummary() {
   $("actualMetView").innerHTML = `${t.tdee + totals.burn}<span class="unit"> kcal</span>`;
   $("targetCalView").innerHTML = `${t.target}<span class="unit"> kcal</span>`;
   $("targetCalView2").textContent = t.target;
+  const remain = t.target - totals.intake;
+  $("remainCalView").innerHTML = `${Math.max(0, remain)}<span class="unit"> kcal</span>`;
+  $("remainCard").className = "stat-card" + (remain >= 0 ? " remain-ok" : " remain-over");
   $("pGoal").textContent = t.protein; $("cGoal").textContent = t.carbs; $("fGoal").textContent = t.fat;
 
   const deficit = t.tdee + totals.burn - totals.intake;
