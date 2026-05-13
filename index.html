@@ -775,7 +775,7 @@ function calcTargets(profile) {
   const tdee = bmr * activity;
   const target = goal === "cut" ? tdee - 500 : goal === "bulk" ? tdee + 300 : tdee;
   const pPerKg = 1.5;
-  const fPerKg = 0.5;
+  const fPerKg = 0.8;
   const protein = Math.round(pPerKg * weight);
   const fat = Math.round(fPerKg * weight);
   const carbs = Math.max(0, Math.round((target - protein * 4 - fat * 9) / 4));
