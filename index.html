@@ -1274,8 +1274,9 @@ document.querySelectorAll(".scat-btn").forEach(btn => {
 // 添加力量训练
 $("addStrength").onclick = () => {
   const name = $("stName").value.trim();
-  const sets = parseInt($("stSets").value);
-  const reps = parseInt($("stReps").value);
+  const setsEl = $("stSets"), repsEl = $("stReps");
+  const sets = parseInt(setsEl.value || setsEl.placeholder || "0");
+  const reps = parseInt(repsEl.value || repsEl.placeholder || "0");
   const weight = parseFloat($("stWeight").value) || 0;
   if (!name || isNaN(sets) || sets < 1 || isNaN(reps) || reps < 1) { alert("请填写动作名称、组数（≥1）和次数（≥1）"); return; }
   const day = getDay(currentDate);
@@ -1304,6 +1305,7 @@ const SYSTEM_PROMPT = `你是专业营养分析助手，将用户的饮食描述
 ## 核心规则
 所有食材（含油脂、卤汁、调料）的 amount 之和 = 该餐食合理总克重，amount 为整数。
 禁止：每种食材都写 amount:100。
+所有 name 字段必须使用中文，严禁出现英文名称（如"Bean in tomato sauce"须写为"茄汁焗豆"，"Chicken breast"须写为"鸡胸肉"）。
 
 ## 重量解读（关键）
 **用户明确给出主料克数**（如"西兰花300g""五花肉200g"）：
