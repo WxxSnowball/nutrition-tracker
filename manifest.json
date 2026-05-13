@@ -1,0 +1,19 @@
+{
+  "name": "每日营养追踪",
+  "short_name": "营养追踪",
+  "description": "每日饮食与运动追踪，AI 智能分析营养摄入",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "portrait-primary",
+  "theme_color": "#667eea",
+  "background_color": "#667eea",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+    <linearGradient id="icon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#e8eeff;stop-opacity:1"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Bowl/plate -->
+  <ellipse cx="256" cy="300" rx="140" ry="30" fill="rgba(255,255,255,0.2)"/>
+  <path d="M116 290 Q116 380 256 380 Q396 380 396 290 Z" fill="url(#icon)" opacity="0.9"/>
+  <!-- Fork -->
+  <rect x="162" y="150" width="14" height="100" rx="7" fill="white" opacity="0.95"/>
+  <rect x="152" y="150" width="8" height="50" rx="4" fill="white" opacity="0.95"/>
+  <rect x="172" y="150" width="8" height="50" rx="4" fill="white" opacity="0.95"/>
+  <!-- Leaf/sprout coming from bowl -->
+  <path d="M256 240 Q290 190 330 170 Q310 220 256 240 Z" fill="#a8e6a3" opacity="0.95"/>
+  <path d="M256 240 Q222 195 185 180 Q205 225 256 240 Z" fill="#7ed87a" opacity="0.85"/>
+  <line x1="256" y1="240" x2="256" y2="290" stroke="#6dbf69" stroke-width="6" stroke-linecap="round"/>
+  <!-- Sparkle dots -->
+  <circle cx="360" cy="155" r="8" fill="white" opacity="0.7"/>
+  <circle cx="380" cy="175" r="5" fill="white" opacity="0.5"/>
+  <circle cx="145" cy="170" r="6" fill="white" opacity="0.6"/>
+</svg>
