@@ -999,13 +999,13 @@ function renderSummary() {
   $("actualMetView").innerHTML = `${t.tdee + totals.burn}<span class="unit"> kcal</span>`;
   $("targetCalView").innerHTML = `${effectiveTarget}<span class="unit"> kcal</span>`;
   $("targetCalView2").textContent = effectiveTarget;
-  const remain = effectiveTarget - totals.intake;
-  $("remainCalView").innerHTML = `${Math.max(0, remain)}<span class="unit"> kcal</span>`;
-  $("remainCard").className = "stat-card" + (remain >= 0 ? " remain-ok" : " remain-over");
-  $("pGoal").textContent = t.protein; $("cGoal").textContent = adjustedCarbs; $("fGoal").textContent = t.fat;
+  const goalGap = effectiveTarget - totals.intake;
+  $("remainCalView").innerHTML = `${Math.max(0, goalGap)}<span class="unit"> kcal</span>`;
+  $("remainCard").className = "stat-card" + (goalGap >= 0 ? " remain-ok" : " remain-over");
+  t.carbs = adjustedCarbs;
+  $("pGoal").textContent = t.protein; $("cGoal").textContent = t.carbs; $("fGoal").textContent = t.fat;
 
   const deficit = t.tdee + totals.burn - totals.intake;
-  const goalGap = effectiveTarget - totals.intake;
   const deficitEl = $("deficitView");
   deficitEl.textContent = `${deficit >= 0 ? "+" : ""}${deficit} kcal`;
   deficitEl.style.color = deficit >= 0 ? "#48bb78" : "#ed8936";
@@ -1013,7 +1013,7 @@ function renderSummary() {
   setBar("barP", totals.p, t.protein);
   setBar("barC", totals.c, adjustedCarbs);
   setBar("barF", totals.f, t.fat);
-  renderAssessment(totals, { ...t, carbs: adjustedCarbs }, goalGap);
+  renderAssessment(totals, t, goalGap);
 }
 
 function setBar(id, val, goal) {
