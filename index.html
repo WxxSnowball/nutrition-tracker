@@ -11,10 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="营养追踪">
 <link rel="apple-touch-icon" href="/icons/icon.svg">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<!-- Firebase CDN (compat) -->
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -664,24 +661,48 @@
   </div>
 </div>
 
+<!-- Nutstore Sync Modal -->
+<div class="modal-mask" id="nutstoreModal">
+  <div class="modal" style="max-width:400px;">
+    <h3>☁ 坚果云同步设置</h3>
+    <p style="font-size:13px;color:#4a5568;line-height:1.6;margin-bottom:12px;">
+      数据将保存为坚果云中的 <b>diet-tracker/data.json</b>。<br>
+      请使用「应用密码」而非账号主密码。
+    </p>
+    <div class="form-group" style="margin-bottom:10px;">
+      <label>坚果云账号（邮箱）</label>
+      <input type="email" id="nutstoreUser" placeholder="your@email.com" autocomplete="email">
+    </div>
+    <div class="form-group" style="margin-bottom:4px;">
+      <label>应用密码</label>
+      <input type="password" id="nutstorePass" placeholder="在坚果云「安全」设置中生成" autocomplete="off">
+    </div>
+    <details style="margin-bottom:12px;">
+      <summary>如何获取应用密码？</summary>
+      <div style="font-size:12px;color:#4a5568;line-height:1.7;margin-top:8px;">
+        1. 登录 <b>jianguoyun.com</b> → 右上角账号 → 「账号信息」<br>
+        2. 左侧「安全」→「第三方应用管理」<br>
+        3. 填写应用名称（随意，如"饮食追踪"）→「生成密码」<br>
+        4. 复制生成的密码粘贴到上方
+      </div>
+    </details>
+    <div id="nutstoreError" style="color:#e53e3e;font-size:13px;margin-bottom:8px;display:none;"></div>
+    <div class="actions">
+      <button class="secondary" id="cancelNutstore">取消</button>
+      <button id="testNutstore" class="secondary">测试连接</button>
+      <button id="saveNutstore">保存</button>
+    </div>
+  </div>
+</div>
+
 <script src="foods.js"></script>
 <script>
-// ============ Firebase 初始化 ============
-const firebaseConfig = {
-  apiKey: "AIzaSyDwEOrkWmHKU7GkGEOK8ew7BbMPkI-bwhM",
-  authDomain: "wxxnutritiontracker.firebaseapp.com",
-  projectId: "wxxnutritiontracker",
-  storageBucket: "wxxnutritiontracker.firebasestorage.app",
-  messagingSenderId: "717984296660",
-  appId: "1:717984296660:web:8292341718589f70fed541",
-  measurementId: "G-M7B03JQWLY"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
-let currentUser = null;
-let _fsTimer = null;
+// ============ 坚果云 WebDAV 同步 ============
+const NUTSTORE_BASE = "https://dav.jianguoyun.com/dav/";
+const NUTSTORE_FILE = NUTSTORE_BASE + "diet-tracker/data.json";
+const NUTSTORE_DIR  = NUTSTORE_BASE + "diet-tracker/";
+let nutsCreds = JSON.parse(localStorage.getItem("nutstore_creds") || "null") || { user: "", pass: "" };
+let _nsTimer = null;
 
 // ============ 运动预设 ============
 const STRENGTH_PRESETS = {
@@ -744,7 +765,7 @@ if (!store.weightHistory) store.weightHistory = [];
 function saveStore() {
   updateDaySnapshot();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-  saveToFirestore(); // 异步，非阻塞；未登录时内部直接返回
+  syncToNutstore(); // 异步，非阻塞；未配置时内部直接返回
 }
 
 function getDay(date) {
@@ -1692,76 +1713,66 @@ document.querySelectorAll(".modal-mask").forEach(m => {
   m.addEventListener("click", e => { if (e.target === m) m.classList.remove("show"); });
 });
 
-// ============ Firebase 认证与云同步 ============
+// ============ 坚果云认证与云同步 ============
+function nutstoreAuth() {
+  return "Basic " + btoa(unescape(encodeURIComponent(nutsCreds.user + ":" + nutsCreds.pass)));
+}
+
 function renderAuthBar() {
   const bar = $("authBar");
-  if (!currentUser) {
+  const configured = nutsCreds.user && nutsCreds.pass;
+  if (!configured) {
     bar.innerHTML = `
       <span style="font-size:13px;color:rgba(255,255,255,0.75);">数据暂存本地</span>
-      <button id="loginBtn" style="display:flex;align-items:center;gap:6px;background:white;color:#444;border:none;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
-        <svg width="16" height="16" viewBox="0 0 48 48" style="flex-shrink:0"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-        使用 Google 账号登录
-      </button>`;
-    $("loginBtn").onclick = signInWithGoogle;
+      <button id="nutstoreBtn" style="background:white;color:#444;border:none;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2);">☁ 配置坚果云同步</button>`;
   } else {
-    const name = currentUser.displayName || currentUser.email;
-    const photo = currentUser.photoURL;
-    const avatar = photo
-      ? `<img src="${escapeHtml(photo)}" style="width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,0.6);">`
-      : `<span style="width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.3);display:inline-flex;align-items:center;justify-content:center;font-size:13px;">👤</span>`;
     bar.innerHTML = `
       <span style="display:flex;align-items:center;gap:7px;color:white;font-size:13px;">
-        ${avatar}
-        <b>${escapeHtml(name)}</b>
-        <span id="syncBadge" style="font-size:11px;padding:2px 9px;border-radius:10px;background:rgba(72,187,120,0.3);color:#c6f6d5;border:1px solid rgba(72,187,120,0.4);">☁ 云端同步</span>
+        <span id="syncBadge" style="font-size:11px;padding:2px 9px;border-radius:10px;background:rgba(72,187,120,0.3);color:#c6f6d5;border:1px solid rgba(72,187,120,0.4);">☁ 坚果云同步</span>
+        <span style="opacity:0.75;">${escapeHtml(nutsCreds.user)}</span>
       </span>
-      <button id="logoutBtn" style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.35);padding:5px 13px;border-radius:8px;font-size:12px;cursor:pointer;">退出登录</button>`;
-    $("logoutBtn").onclick = signOutUser;
+      <button id="nutstoreBtn" style="background:rgba(255,255,255,0.15);color:white;border:1px solid rgba(255,255,255,0.35);padding:5px 13px;border-radius:8px;font-size:12px;cursor:pointer;">⚙ 同步设置</button>`;
   }
+  $("nutstoreBtn").onclick = openNutstoreModal;
 }
 
-async function signInWithGoogle() {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  try {
-    await auth.signInWithPopup(provider);
-  } catch (err) {
-    if (err.code !== "auth/popup-closed-by-user") alert("登录失败：" + err.message);
-  }
+function openNutstoreModal() {
+  $("nutstoreUser").value = nutsCreds.user || "";
+  $("nutstorePass").value = nutsCreds.pass || "";
+  $("nutstoreError").style.display = "none";
+  $("nutstoreModal").classList.add("show");
 }
 
-async function signOutUser() {
-  await auth.signOut();
-  store = loadStoreFromLocalStorage();
-  renderProfile();
-  renderAll();
-}
-
-async function loadFromFirestore() {
-  if (!currentUser) return;
-  const docRef = db.collection("users").doc(currentUser.uid);
-  try {
-    const doc = await docRef.get();
-    if (doc.exists) {
-      // 已有云端数据，以云端为准
-      const data = doc.data();
-      store = {
-        profile: data.profile || null,
-        weightHistory: data.weightHistory || [],
-        days: data.days || {},
-        apiKey: data.apiKey || store.apiKey || ""
-      };
-      if (!store.weightHistory) store.weightHistory = [];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-    } else {
-      // 首次登录：将本地数据迁移到云端
-      await _doSaveToFirestore();
+function setupNutstoreModal() {
+  $("cancelNutstore").onclick = () => $("nutstoreModal").classList.remove("show");
+  $("saveNutstore").onclick = () => {
+    nutsCreds.user = $("nutstoreUser").value.trim();
+    nutsCreds.pass = $("nutstorePass").value.trim();
+    localStorage.setItem("nutstore_creds", JSON.stringify(nutsCreds));
+    $("nutstoreModal").classList.remove("show");
+    renderAuthBar();
+    if (nutsCreds.user && nutsCreds.pass) loadFromNutstore();
+  };
+  $("testNutstore").onclick = async () => {
+    const user = $("nutstoreUser").value.trim();
+    const pass = $("nutstorePass").value.trim();
+    const errEl = $("nutstoreError");
+    if (!user || !pass) { errEl.textContent = "请填写账号和应用密码"; errEl.style.display = "block"; return; }
+    $("testNutstore").textContent = "测试中…"; $("testNutstore").disabled = true;
+    try {
+      const res = await fetch(NUTSTORE_BASE, {
+        method: "PROPFIND",
+        headers: { "Authorization": "Basic " + btoa(unescape(encodeURIComponent(user + ":" + pass))), "Depth": "0" }
+      });
+      if (res.status === 401) throw new Error("账号或应用密码错误");
+      if (!res.ok && res.status !== 207) throw new Error("连接失败 (HTTP " + res.status + ")");
+      errEl.style.color = "#38a169"; errEl.textContent = "✓ 连接成功！"; errEl.style.display = "block";
+    } catch (err) {
+      errEl.style.color = "#e53e3e"; errEl.textContent = err.message; errEl.style.display = "block";
+    } finally {
+      $("testNutstore").textContent = "测试连接"; $("testNutstore").disabled = false;
     }
-    renderProfile();
-    renderAll();
-  } catch (err) {
-    console.error("Firestore 加载失败：", err);
-    // 静默失败，继续使用本地数据
-  }
+  };
 }
 
 function _updateSyncBadge(state) {
@@ -1777,35 +1788,61 @@ function _updateSyncBadge(state) {
   b.style.color = s.color; b.style.borderColor = s.bd;
 }
 
-async function _doSaveToFirestore() {
-  if (!currentUser) return;
+async function loadFromNutstore() {
+  if (!nutsCreds.user || !nutsCreds.pass) return;
   _updateSyncBadge("syncing");
   try {
-    await db.collection("users").doc(currentUser.uid).set({
-      profile: store.profile || null,
-      weightHistory: store.weightHistory || [],
-      days: store.days || {},
-      apiKey: store.apiKey || "",
-      _updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    const res = await fetch(NUTSTORE_FILE, { headers: { "Authorization": nutstoreAuth() } });
+    if (res.status === 404) { await _doSyncToNutstore(); return; }
+    if (res.status === 401) { _updateSyncBadge("err"); return; }
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    store = {
+      profile: data.profile || null,
+      weightHistory: data.weightHistory || [],
+      days: data.days || {},
+      apiKey: data.apiKey || store.apiKey || ""
+    };
+    if (!store.weightHistory) store.weightHistory = [];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    renderProfile();
+    renderAll();
     _updateSyncBadge("ok");
   } catch (err) {
-    console.error("Firestore 保存失败：", err);
+    console.error("坚果云加载失败：", err);
     _updateSyncBadge("err");
   }
 }
 
-function saveToFirestore() {
-  if (!currentUser) return;
-  if (_fsTimer) clearTimeout(_fsTimer);
-  _fsTimer = setTimeout(() => _doSaveToFirestore(), 1500);
+async function _doSyncToNutstore() {
+  if (!nutsCreds.user || !nutsCreds.pass) return;
+  _updateSyncBadge("syncing");
+  try {
+    // 确保目录存在
+    await fetch(NUTSTORE_DIR, { method: "MKCOL", headers: { "Authorization": nutstoreAuth() } });
+    const res = await fetch(NUTSTORE_FILE, {
+      method: "PUT",
+      headers: { "Authorization": nutstoreAuth(), "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ profile: store.profile || null, weightHistory: store.weightHistory || [], days: store.days || {}, apiKey: store.apiKey || "" })
+    });
+    if (!res.ok && res.status !== 201 && res.status !== 204) throw new Error("HTTP " + res.status);
+    _updateSyncBadge("ok");
+  } catch (err) {
+    console.error("坚果云同步失败：", err);
+    _updateSyncBadge("err");
+  }
 }
 
-auth.onAuthStateChanged(async (user) => {
-  currentUser = user;
-  renderAuthBar();
-  if (user) await loadFromFirestore();
-});
+function syncToNutstore() {
+  if (!nutsCreds.user || !nutsCreds.pass) return;
+  if (_nsTimer) clearTimeout(_nsTimer);
+  _nsTimer = setTimeout(() => _doSyncToNutstore(), 1500);
+}
+
+// 启动：渲染状态栏，若已配置则加载云端数据
+renderAuthBar();
+if (nutsCreds.user && nutsCreds.pass) loadFromNutstore();
+setupNutstoreModal();
 
 // ============ 初始化 ============
 $("dbCount").textContent = window.FOOD_DB.length;
